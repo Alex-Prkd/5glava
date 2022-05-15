@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Логин</title>
+</head>
+<body>
+    <div style="color:red">
+    {% for field in form.errors.values() %}
+        {{ field }}
+    {% endfor %}
+    </div>
+    <form action="/login" method="post">
+        {{ form.hidden_tag() }}
+        {{ form.username.label }}
+        {{ form.username }}
+        {{ form.password.label }}
+        {{ form.password }}
+        <button type="submit">Вход</button>
+    </form>
+</body>
+</html>

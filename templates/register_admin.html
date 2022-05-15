@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация</title>
+</head>
+<body>
+    <div>
+        <a href="/">Главная</a>
+    </div>
+    <div style="color:red">
+        {% for field in form.errors.values() %}
+            {{ field}}
+            {{form.errors }}
+        {% endfor %}
+    </div>
+    <form action="/register_admin" method="post">
+        {{ form.hidden_tag() }}
+        {{ form.username.label }}
+        {{ form.username }}
+        {{ form.password.label }}
+        {{ form.password }}
+        <input type="submit" value="Добавить">
+    </form>
+</body>
+</html>
