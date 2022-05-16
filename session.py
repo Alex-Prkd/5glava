@@ -1,4 +1,4 @@
-from flask import Flask, session, render_template, redirect, request
+from flask import Flask, session, render_template, redirect, request, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
@@ -24,8 +24,8 @@ class User(db.Model):
                          nullable=False
                          )
     password_hash = db.Column(db.String(128),
-                         nullable=False
-                         )
+                                nullable=False
+                              )
 
     role = db.Column(db.String(32),
                      nullable=False,
@@ -40,7 +40,12 @@ class User(db.Model):
 
     @password.setter
     def password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = password
+        print('setter')
+
+
+    def password_valid(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
 class LoginForm(FlaskForm):
@@ -63,26 +68,36 @@ class RegisterForm(FlaskForm):
                              )
 
 
+class ChangePassword(FlaskForm):
+    old = PasswordField('Старый пароль: ',
+                        validators=[DataRequired()]
+                        )
+    new = PasswordField('Новый пароль: ',
+                        validators=[DataRequired()]
+                        )
+
+
+
 @app.route('/')
 def home():
-    if session.get('user_id'):
+    if session.get('user'):
         return render_template('page_home.html',
-                               username=session['username']
+                               id=session['user']['id'],
+                               username=session['user']['username']
                                )
     return redirect('/login')
 
 
 @app.route('/logout', methods=['POST', 'GET'])
 def logout():
-    if session.get('user_id'):
-        session.pop('user_id')
-        session.pop('username')
+    if session.get('user'):
+        session.pop('user')
     return redirect('/login')
 
 
 @app.route('/admins', methods=['POST', 'GET'])
 def all_admin():
-    if session.get('user_id') and request.method == 'POST':
+    if session.get('user') and request.method == 'POST':
         admins = User.query.order_by(User.id).all()
         return render_template('info_admin.html', admins=admins)
     return redirect('/login')
@@ -90,9 +105,9 @@ def all_admin():
 
 @app.route('/register_admin', methods=['POST', 'GET'])
 def register():
-    if not session.get('user_id'):
+    if not session.get('user'):
         return render_template('page_login.html',
-                               form=LoginForm()
+
                                )
     form = RegisterForm()
     if not form.validate_on_submit():
@@ -102,20 +117,51 @@ def register():
     if request.method == 'POST':
         superuser = User.query.filter_by(username=form.username.data).first()
         if not superuser:
-            new_admin = User(username=form.username.data, password=form.password.data)
+            password = generate_password_hash(form.password.data)
+            new_admin = User(username=form.username.data, password_hash=password)
             db.session.add(new_admin)
             db.session.commit()
             return redirect('/admins')
         form.username.errors = 'Такое имя уже зарегистрировано.'
-        return render_template('register_admin.html', form=form)
+        return render_template('register_admin.html',
+                               form=form
+                               )
     return render_template('page_login.html',
                            form=LoginForm()
                            )
 
 
+@app.route('/settings_profile', methods=['POST', 'GET'])
+def change_user():
+    if not session.get('user'):
+        return redirect('/')
+    user = User.query.get(session['user']['id'])
+    form = ChangePassword()
+    if not form.validate_on_submit():
+        return render_template('settings_profile.html',
+                               form=form
+                               )
+    if request.method == 'POST':
+        if not user.password_valid(form.old.data):
+            form.old.errors = 'Пароль не верен.'
+            return render_template('settings_profile.html',
+                                   form=form
+                                   )
+        if form.old.data == form.new.data:
+            form.old.errors = 'Пароли не должны совпадать.'
+            return render_template('settings_profile.html',
+                                   form=form
+                                   )
+        user.password_hash = generate_password_hash(form.new.data)
+        db.session.commit()
+        flash('Пароль изменен.')
+        return redirect('/')
+
+
+
 @app.route('/login', methods=['POST', 'GET'])
 def login():
-    if session.get('user_id'):
+    if session.get('user'):
         return redirect('/')
     form = LoginForm()
     if not form.validate_on_submit():
@@ -125,14 +171,17 @@ def login():
 
     if request.method == 'POST':
         superuser = User.query.filter_by(username=form.username.data).first()
-        if not superuser or superuser.password != form.password.data:
+        if not superuser or not superuser.password_valid(form.password.data):
             form.username.errors = 'Неправильное имя или пароль.'
             return render_template('page_login.html', form=form)
-        session['user_id'] = superuser.id
-        session['username'] = superuser.username
+        session['user'] = {'id': superuser.id,
+                           'username': superuser.username,
+                           'role': superuser.role
+                           }
         return redirect('/')
     return render_template('page_login.html',
                            form=form
                            )
 
 
+app.run(debug=True)

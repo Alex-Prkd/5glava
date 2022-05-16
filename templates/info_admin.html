@@ -9,7 +9,7 @@
 </head>
 <body>
     {% for admin in admins %}
-        <h3>Имя: {{admin.username}}  |  Пароль: {{ admin.password }}</h3>
+        <h3>Имя: {{admin.username}}  |  Пароль: {{ admin.password_hash }}</h3>
     {% endfor %}
     <form action="/register_admin" method="post"><button type="submit">Добавить Администратора</button></form>
     <form action="/logout" method="post"><button type="submit">Выйти</button></form>
