@@ -8,8 +8,9 @@
     <title>Document</title>
 </head>
 <body>
-    <h1>{{username}}</h1>
-    <form action="/admins" method="post"><button type="submit">Список администраторов</button></form>
-    <form action="/logout" method="post"><button type="submit">Выйти</button></form>
+    <h1>{{username}} | ID: {{ id }}</h1>
+    <br><form action="/admins" method="post"><button type="submit">Список администраторов</button></form></br>
+    <br><form action="/settings_profile" method="post"><button type="submit">Сменить пароль</button></form></br>
+    <br><form action="/logout" method="post"><button type="submit">Выйти</button></form></br>
 </body>
 </html>
