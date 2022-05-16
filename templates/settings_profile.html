@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Изменение пароля</title>
+</head>
+<body>
+    <div>
+        <a href="/">Главная</a>
+    </div>
+    <div style="color:red">
+    {% for field in form.errors.values() %}
+        {{ field }}
+    {% endfor %}
+    </div>
+    <form action="/settings_profile" method="post">
+        {{ form.hidden_tag() }}
+        {{ form.old.label }}
+        {{ form.old }}
+        {{ form.new.label }}
+        {{ form.new }}
+        <input type="submit" value="Изменить">
+    </form>
+</body>
+</html>
